@@ -160,7 +160,10 @@ const displayRoverPhotos = (rover) => {
 }
 
 async function getLatestPhotos(rover, state) {
-	return await getRoverPhotos(rover, state.rover_details[rover].max_date).then(data => data.photos);
+	if (state.rover_details[rover].max_date)
+		return await getRoverPhotos(rover, state.rover_details[rover].max_date).then(data => data.photos);
+	else
+		return [{img_src: ''}];
 }
 
 // ------------------------------------------------------  API CALLS
