@@ -1,5 +1,6 @@
 let store = {
     user: { name: "Student" },
+    current_display: 'Main', //the main screen
     apod: '',
     rovers: ['Curiosity', 'Opportunity', 'Spirit'],
     rover_details: {
@@ -19,39 +20,55 @@ const updateStore = (store, newState) => {
 }
 
 const render = async (root, state) => {
-    root.innerHTML = App(state)
+    root.innerHTML = await App(state)
 }
 
 
+//TODO remove async from App function and await App from render function
 // create content
-const App = (state) => {
+const App = async (state) => {
     let { rovers, apod } = state
-
-    return `
-        <header></header>
-        <main>
-            ${Greeting(store.user.name)}
-            <section>
-                <h3>Put things on the page!</h3>
-                <p>Here is an example section.</p>
-                <p>
-                    One of the most popular websites at NASA is the Astronomy Picture of the Day. In fact, this website is one of
-                    the most popular websites across all federal agencies. It has the popular appeal of a Justin Bieber video.
-                    This endpoint structures the APOD imagery and associated metadata so that it can be repurposed for other
-                    applications. In addition, if the concept_tags parameter is set to True, then keywords derived from the image
-                    explanation are returned. These keywords could be used as auto-generated hashtags for twitter or instagram feeds;
-                    but generally help with discoverability of relevant imagery.
-                </p>
-                ${ImageOfTheDay(apod)}
-            </section>
-	    <section>
-	    ${displayInitialRoverInformation(state.rover_details.Curiosity)}<br />
-	    ${displayInitialRoverInformation(state.rover_details.Opportunity)}<br />
-	    ${displayInitialRoverInformation(state.rover_details.Spirit)}<br />
-	    </section>
-        </main>
-        <footer></footer>
-    `
+    if (store.current_display == 'Main') {
+	    return `
+		<header></header>
+		<main>
+		    ${Greeting(store.user.name)}
+		    <section>
+			<h3>Put things on the page!</h3>
+			<p>Here is an example section.</p>
+			<p>
+			    One of the most popular websites at NASA is the Astronomy Picture of the Day. In fact, this website is one of
+			    the most popular websites across all federal agencies. It has the popular appeal of a Justin Bieber video.
+			    This endpoint structures the APOD imagery and associated metadata so that it can be repurposed for other
+			    applications. In addition, if the concept_tags parameter is set to True, then keywords derived from the image
+			    explanation are returned. These keywords could be used as auto-generated hashtags for twitter or instagram feeds;
+			    but generally help with discoverability of relevant imagery.
+			</p>
+			${ImageOfTheDay(apod)}
+		    </section>
+		    <section>
+		    ${await displayInitialRoverInformation(state.rover_details.Curiosity)}<br />
+		    ${await displayInitialRoverInformation(state.rover_details.Opportunity)}<br />
+		    ${await displayInitialRoverInformation(state.rover_details.Spirit)}<br />
+		    </section>
+		</main>
+		<footer></footer>
+	    `
+    } else if (rovers.includes(store.current_display)) {
+	    return (`
+	    	<header></header>
+		<main>
+			<h1>${store.current_display}</h1>
+			<section>
+				${displayRoverPhotos(state.rover_details[store.current_display])}
+			</section>
+			<section>
+				${displayInitialRoverInformation(state.rover_details[store.current_display])}
+			</section>
+		</main>
+		<footer></footer>
+	    `);
+    }
 }
 
 // listening for load event because page should load before any JS is called
@@ -74,10 +91,8 @@ const Greeting = (name) => {
     `
 }
 
-var numa;
 // Example of a pure function that renders infomation requested from the backend
 const ImageOfTheDay = (apod) => {
-	numa++; console.log(numa);
     // If image does not already exist, or it is not from today -- request it again
     const today = new Date()
     const photodate = new Date(apod.date)
@@ -86,34 +101,36 @@ const ImageOfTheDay = (apod) => {
     console.log(photodate.getDate() === today.getDate());
     if (!apod || apod.date === today.getDate() ) {
         getImageOfTheDay(store)
-	console.log('image retrieved')
     }
 
     // check if the photo of the day is actually type video!
-    if (apod.media_type === "video") {
+    if (apod.image.media_type === "video") {
         return (`
-            <p>See today's featured video <a href="${apod.url}">here</a></p>
-            <p>${apod.title}</p>
-            <p>${apod.explanation}</p>
+            <p>See today's featured video <a href="${apod.image.url}">here</a></p>
+            <p>${apod.image.title}</p>
+            <p>${apod.image.explanation}</p>
         `)
     } else {
         return (`
+	    <p>${apod.image.title}</p>
             <img src="${apod.image.url}" height="350px" width="100%" />
             <p>${apod.image.explanation}</p>
         `)
     }
 }
 
-const displayInitialRoverInformation = (rover) => {
+const displayInitialRoverInformation = async (rover) => {
 	try {
 		const loadingString = 'Loading...';
-		const imageLoadingSrc = '<br /><img src="assets/Mars_Loading.png" class="mars-load" style="width: 50px; position: absolute; left: 92%;" />';
+		const imageLoadingSrc = '<br /><img src="assets/Mars_Loading.png" class="mars-load" style="width: 50px; position: absolute; left: 93%;" />';
 		if (rover.needsFetch) {
 			getRoverInformation(rover.name);
 		}
 
+		const img_data = await displayRoverPhotos(rover.name);
 		return (`
 		<div class='rover-button'>
+			${img_data ? img_data : ''}<br />
 			<span><strong>${rover.name ? rover.name : (loadingString)}</strong></span>${rover.launch_date ? '' : imageLoadingSrc}<br /><br />
 			<span>Launch date: ${rover.launch_date ? rover.launch_date : loadingString}</span><br />
 			<span>Landing date: ${rover.landing_date ? rover.landing_date : loadingString}</span><br />
@@ -131,6 +148,21 @@ const displayInitialRoverInformation = (rover) => {
 			</div>`);
 	}
 }
+
+const displayRoverPhotos = (rover) => {
+	const photos = getLatestPhotos(rover, store)
+		.then(data => {
+			if (data) return `<img src="${data[0].img_src}" width="10%" />`; 
+		})
+		.catch(err => console.log(err));
+	return photos;
+	
+}
+
+async function getLatestPhotos(rover, state) {
+	return await getRoverPhotos(rover, state.rover_details[rover].max_date).then(data => data.photos);
+}
+
 // ------------------------------------------------------  API CALLS
 // Example API call
 const getImageOfTheDay = (state) => {
@@ -153,4 +185,11 @@ function getRoverInformation(rover) {
 			},
 		}))
 		.catch(err => console.log(err));
+}
+
+async function getRoverPhotos(rover, date) {
+	const data = await fetch(`http://localhost:3000/rover_photos/${rover.toLowerCase()}/${date}`)
+		.then(data => data.json())
+		.catch(err => console.log(err));
+	return data;
 }
