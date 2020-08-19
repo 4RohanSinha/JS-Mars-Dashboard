@@ -1,0 +1,86 @@
+/* -------------------  MOBILE  --------------------- */
+
+body {
+  display: flex;
+  flex-direction: column;
+  font-family: Arial;
+  min-height: 100vh;
+}
+
+header {
+  /* header styles */
+}
+
+main {
+  flex: 1;
+  padding: 20px;
+}
+
+footer {
+  /* footer styles */
+}
+
+
+/* Center the initial loading screen's text*/
+#initial-load-text {
+	position: absolute;
+	left: 40%;
+	top: 25%;
+}
+
+
+/* Rotation animation
+ * source: https://stackoverflow.com/questions/16771225/css3-rotate-animation
+ * */
+.mars-load {
+	-webkit-animation:spin 4s linear infinite;
+	-moz-animation:spin 4s linear infinite;
+	animation:spin 4s linear infinite;
+}
+
+@-moz-keyframes spin { 100% { -moz-transform: rotate(360deg); } }
+@-webkit-keyframes spin { 100% { -webkit-transform: rotate(360deg); } }
+@keyframes spin { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
+
+
+#initial-mars-load {
+	position: absolute;
+	top: 35%;
+	left: 37%;
+	width: 250px;
+	height: 250px;
+}
+
+/* border for the buttons to see each rover */
+.rover-button {
+	border: 1px solid lightgrey;
+	border-radius: 10px;
+	padding-left: 10px;
+}
+
+/* when rover information is hovered over*/
+.rover-button:hover {
+	background-color: whitesmoke;
+}
+
+/* when rover information is clicked on */
+.rover-button:active {
+	background-color: lightgrey;
+}
+
+/* -------------------  TABLET  --------------------- */
+@media (min-width: 768px) {
+  /* use mobile */
+}
+
+/* -------------------  DESKTOP  -------------------- */
+
+@media (min-width: 1224px) {
+  /* use mobile */
+}
+
+/* -------------------  LARGE SCREENS  -------------- */
+
+@media (min-width: 1824px) {
+  /* use mobile */
+}
