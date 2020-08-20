@@ -9,6 +9,12 @@ let store = {
 	    'Opportunity': {name: 'Opportunity', needsFetch: true},
 	    'Spirit': {name: 'Spirit', needsFetch: true},
     },
+    
+    curiosity_photos: { photos: [], current_index: undefined },
+    opportunity_photos: { photos: [], current_index: undefined },
+    spirit_photos: { photos: [], current_index: undefined }
+    
+    
 }
 
 // add our markup to the page
@@ -127,7 +133,7 @@ const displayInitialRoverInformation = async (rover) => {
 			getRoverInformation(rover.name);
 		}
 
-		const img_data = await displayRoverPhotos(rover.name);
+		const img_data = displayRoverPhotos(rover.name);
 		return (`
 		<div class='rover-button'>
 			${img_data ? img_data : ''}<br />
@@ -151,17 +157,21 @@ const displayInitialRoverInformation = async (rover) => {
 
 const displayRoverPhotos = (rover) => {
 	const photos = getLatestPhotos(rover, store)
-		.then(data => {
-			if (data) return `<img src="${data[0].img_src}" width="10%" />`; 
-		})
-		.catch(err => console.log(err));
-	return photos;
+	const rover_index = (rover.toLowerCase()) + '_photos';
+	if ((photos && store[rover_index])) return `<img src="${photos[store[rover_index].current_index].img_src}" width="10%" />`; 
 	
 }
 
-async function getLatestPhotos(rover, state) {
-	if (state.rover_details[rover].max_date)
-		return await getRoverPhotos(rover, state.rover_details[rover].max_date).then(data => data.photos);
+let cnt = 0;
+function getLatestPhotos(rover, state) {
+	if (state.rover_details[rover].max_date) {
+		if (!store[(rover.toLowerCase()) + '_photos'].current_index) {
+			getRoverPhotos(rover, state.rover_details[rover].max_date);
+			cnt++;
+		}
+
+		return store[rover.toLowerCase() + '_photos'].photos;
+	}
 	else
 		return [{img_src: ''}];
 }
@@ -190,9 +200,26 @@ function getRoverInformation(rover) {
 		.catch(err => console.log(err));
 }
 
-async function getRoverPhotos(rover, date) {
-	const data = await fetch(`http://localhost:3000/rover_photos/${rover.toLowerCase()}/${date}`)
+function getRoverPhotos(rover, date) {
+	const store_key = rover.toLowerCase() + '_photos';
+	if (store[store_key].current_index)
+		return;
+	console.log("Hello World")
+	if (cnt > 6)
+		return;
+	const data = fetch(`http://localhost:3000/rover_photos/${rover.toLowerCase()}/${date}`)
 		.then(data => data.json())
+		.then(data => data.photos)
+		.then(data => {
+			console.log(data);
+			updateStore(store, {
+				[store_key]: {
+					photos: data,
+					current_index: 0
+				} 
+			});
+			return data;
+		})
 		.catch(err => console.log(err));
 	return data;
 }
