@@ -10,9 +10,9 @@ let store = {
 	    'Spirit': {name: 'Spirit', needsFetch: true},
     },
     
-    curiosity_photos: { photos: [], current_index: undefined },
-    opportunity_photos: { photos: [], current_index: undefined },
-    spirit_photos: { photos: [], current_index: undefined }
+    curiosity_photos: { photos: undefined, current_index: undefined },
+    opportunity_photos: { photos: undefined, current_index: undefined },
+    spirit_photos: { photos: undefined, current_index: undefined }
     
     
 }
@@ -26,19 +26,19 @@ const updateStore = (store, newState) => {
 }
 
 const render = async (root, state) => {
-    root.innerHTML = await App(state)
+    root.innerHTML = App(state)
 }
 
 
 //TODO remove async from App function and await App from render function
 // create content
-const App = async (state) => {
+const App = (state) => {
     let { rovers, apod } = state
     if (store.current_display == 'Main') {
 	    return `
 		<header></header>
 		<main>
-		    ${Greeting(store.user.name)}
+		    ${Greeting(state.user.name)}
 		    <section>
 			<h3>Put things on the page!</h3>
 			<p>Here is an example section.</p>
@@ -53,9 +53,9 @@ const App = async (state) => {
 			${ImageOfTheDay(apod)}
 		    </section>
 		    <section>
-		    ${await displayInitialRoverInformation(state.rover_details.Curiosity)}<br />
-		    ${await displayInitialRoverInformation(state.rover_details.Opportunity)}<br />
-		    ${await displayInitialRoverInformation(state.rover_details.Spirit)}<br />
+		    ${displayInitialRoverInformation(state.rover_details.Curiosity)}<br />
+		    ${displayInitialRoverInformation(state.rover_details.Opportunity)}<br />
+		    ${displayInitialRoverInformation(state.rover_details.Spirit)}<br />
 		    </section>
 		</main>
 		<footer></footer>
@@ -125,7 +125,7 @@ const ImageOfTheDay = (apod) => {
     }
 }
 
-const displayInitialRoverInformation = async (rover) => {
+const displayInitialRoverInformation = (rover) => {
 	try {
 		const loadingString = 'Loading...';
 		const imageLoadingSrc = '<br /><img src="assets/Mars_Loading.png" class="mars-load" style="width: 50px; position: absolute; left: 93%;" />';
@@ -134,6 +134,7 @@ const displayInitialRoverInformation = async (rover) => {
 		}
 
 		const img_data = displayRoverPhotos(rover.name);
+
 		return (`
 		<div class='rover-button'>
 			${img_data ? img_data : ''}<br />
@@ -155,19 +156,20 @@ const displayInitialRoverInformation = async (rover) => {
 	}
 }
 
+//TODO: pass in store
 const displayRoverPhotos = (rover) => {
-	const photos = getLatestPhotos(rover, store)
+	const photos = getLatestPhotos(rover, store);
 	const rover_index = (rover.toLowerCase()) + '_photos';
-	if ((photos && store[rover_index])) return `<img src="${photos[store[rover_index].current_index].img_src}" width="10%" />`; 
+	if ((photos && store[rover_index]) && store[rover_index].current_index != undefined) return `<img src="${photos[store[rover_index].current_index].img_src}" width="10%" />`; 
+	else return ``;
 	
 }
 
-let cnt = 0;
+//TODO: pass in store
 function getLatestPhotos(rover, state) {
 	if (state.rover_details[rover].max_date) {
 		if (!store[(rover.toLowerCase()) + '_photos'].current_index) {
 			getRoverPhotos(rover, state.rover_details[rover].max_date);
-			cnt++;
 		}
 
 		return store[rover.toLowerCase() + '_photos'].photos;
@@ -202,11 +204,17 @@ function getRoverInformation(rover) {
 
 function getRoverPhotos(rover, date) {
 	const store_key = rover.toLowerCase() + '_photos';
-	if (store[store_key].current_index)
+	if (store[store_key].current_index != undefined)
 		return;
-	console.log("Hello World")
-	if (cnt > 6)
-		return;
+	
+	//this line to prevent repeated requests to this function - it takes time for the response from the server to be returned, so it the current_index, which is undefined, is not immediately set by the Promise then statement below
+	//therefore, it needs to be set for the above if statement to return from the function and prevent too many requests to this function (which could end up exceeding the maximum number of API requests allowed to NASA)
+	updateStore(store, {
+		[store_key]: {
+			current_index: 0
+		}
+	});
+
 	const data = fetch(`http://localhost:3000/rover_photos/${rover.toLowerCase()}/${date}`)
 		.then(data => data.json())
 		.then(data => data.photos)
@@ -216,10 +224,8 @@ function getRoverPhotos(rover, date) {
 				[store_key]: {
 					photos: data,
 					current_index: 0
-				} 
+				}
 			});
-			return data;
 		})
 		.catch(err => console.log(err));
-	return data;
 }

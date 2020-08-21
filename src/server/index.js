@@ -36,11 +36,14 @@ const getRoverPhotoInformation = async (rover, date) => {
 	}
 }
 
+let cnt = 0;
 // example API call
 app.get('/apod', async (req, res) => {
     try {
         let image = await fetch(`https://api.nasa.gov/planetary/apod?api_key=${process.env.API_KEY}`)
             .then(res => res.json())
+	cnt++;
+	console.log(cnt);
         res.send({ image })
     } catch (err) {
         console.log('error:', err);
@@ -49,11 +52,15 @@ app.get('/apod', async (req, res) => {
 
 app.get('/:rover', async (req, res) => {
 	const roverInfo = await getRoverInformation(req.params.rover);
+	cnt++;
+	console.log(cnt);
 	res.send(roverInfo);
 });
 
 app.get('/rover_photos/:rover/:date', async (req, res) => {
 	const roverInfo = await getRoverPhotoInformation(req.params.rover, req.params.date);
+	cnt++;
+	console.log(cnt);
 	res.send(roverInfo);
 });
 
