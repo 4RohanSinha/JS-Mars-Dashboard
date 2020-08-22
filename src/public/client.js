@@ -191,7 +191,23 @@ const getImageOfTheDay = (state) => {
 
 function getRoverInformation(rover) {
 	console.log(rover);
-	fetch(`http://localhost:3000/${rover.toLowerCase()}`)
+	
+	if (!store.rover_details[rover].needsFetch)
+		return;
+
+	//update needsFetch member variable because it prevents this function from needlessly being repeatedly called
+	updateStore(store, {
+		rover_details: {
+			...store.rover_details,
+			[rover]: {
+				...store.rover_details[rover],
+				needsFetch: false
+			}
+		}
+	});
+
+	//fetch data
+	fetch(`http://localhost:3000/rover_information/${rover.toLowerCase()}`)
 		.then(data => data.json())
 		.then(data => updateStore(store, {
 			rover_details: {
@@ -200,6 +216,18 @@ function getRoverInformation(rover) {
 			},
 		}))
 		.catch(err => console.log(err));
+
+
+	//add the needsFetch back to the store - it gets overriden in the fetch function
+	updateStore(store, {
+		rover_details: {
+			...store.rover_details,
+			[rover]: {
+				...store.rover_details[rover],
+				needsFetch: false
+			}
+		}
+	});
 }
 
 function getRoverPhotos(rover, date) {
@@ -211,6 +239,7 @@ function getRoverPhotos(rover, date) {
 	//therefore, it needs to be set for the above if statement to return from the function and prevent too many requests to this function (which could end up exceeding the maximum number of API requests allowed to NASA)
 	updateStore(store, {
 		[store_key]: {
+			...store[store_key],
 			current_index: 0
 		}
 	});
