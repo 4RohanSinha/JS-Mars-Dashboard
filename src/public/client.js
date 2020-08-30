@@ -3,6 +3,9 @@ let store = {
     current_display: 'Main', //the main screen
     apod: '',
     rovers: ['Curiosity', 'Opportunity', 'Spirit'],
+    curiosity: createEmptyRoverObject('Curiosity'),
+    opportunity: createEmptyRoverObject('Opportunity'),
+    spirit: createEmptyRoverObject('Spirit'),
     rover_details: {
 	    //TODO: create function to return empty rover
 	    'Curiosity': {name: 'Curiosity', needsFetch: true},
@@ -13,8 +16,6 @@ let store = {
     curiosity_photos: { photos: undefined, current_index: undefined },
     opportunity_photos: { photos: undefined, current_index: undefined },
     spirit_photos: { photos: undefined, current_index: undefined }
-    
-    
 }
 
 // add our markup to the page
@@ -30,7 +31,6 @@ const render = async (root, state) => {
 }
 
 
-//TODO remove async from App function and await App from render function
 // create content
 const App = (state) => {
     let { rovers, apod } = state
@@ -53,9 +53,9 @@ const App = (state) => {
 			${ImageOfTheDay(apod)}
 		    </section>
 		    <section>
-		    ${displayInitialRoverInformation(state.rover_details.Curiosity)}<br />
-		    ${displayInitialRoverInformation(state.rover_details.Opportunity)}<br />
-		    ${displayInitialRoverInformation(state.rover_details.Spirit)}<br />
+		    ${displayInitialRoverInformation(state.rover_details.Curiosity, true)}<br />
+		    ${displayInitialRoverInformation(state.rover_details.Opportunity, true)}<br />
+		    ${displayInitialRoverInformation(state.rover_details.Spirit, true)}<br />
 		    </section>
 		</main>
 		<footer></footer>
@@ -66,10 +66,10 @@ const App = (state) => {
 		<main>
 			<h1>${store.current_display}</h1>
 			<section>
-				${displayRoverPhotos(state.rover_details[store.current_display])}
+				${displayRoverPhotos(state.rover_details[store.current_display].name)}
 			</section>
 			<section>
-				${displayInitialRoverInformation(state.rover_details[store.current_display])}
+				${displayInitialRoverInformation(state.rover_details[store.current_display], false)}
 			</section>
 		</main>
 		<footer></footer>
@@ -125,7 +125,7 @@ const ImageOfTheDay = (apod) => {
     }
 }
 
-const displayInitialRoverInformation = (rover) => {
+const displayInitialRoverInformation = (rover, show_image) => {
 	try {
 		const loadingString = 'Loading...';
 		const imageLoadingSrc = '<br /><img src="assets/Mars_Loading.png" class="mars-load" style="width: 50px; position: absolute; left: 93%;" />';
@@ -133,17 +133,15 @@ const displayInitialRoverInformation = (rover) => {
 			getRoverInformation(rover.name);
 		}
 
-		const img_data = displayRoverPhotos(rover.name);
+		let img_data = displayRoverPhotos(rover.name);
+		if (!show_image) {
+			img_data = '';
+		}
 
 		return (`
-		<div class='rover-button'>
+		<div class='rover-button' onclick='(function callback() { console.log("Hello"); updateStore(store, { current_display: "${rover.name}" }); })()'>
 			${img_data ? img_data : ''}<br />
-			<span><strong>${rover.name ? rover.name : (loadingString)}</strong></span>${rover.launch_date ? '' : imageLoadingSrc}<br /><br />
-			<span>Launch date: ${rover.launch_date ? rover.launch_date : loadingString}</span><br />
-			<span>Landing date: ${rover.landing_date ? rover.landing_date : loadingString}</span><br />
-			<span>Status: ${rover.status ? rover.status : loadingString}</span><br />
-			<span>Total number of photos: ${rover.total_photos ? rover.total_photos : loadingString}</span><br />
-			<span>Latest update: ${rover.max_date ? rover.max_date : loadingString}</span><br />
+			${displayRoverDetails(rover)}
 		</div>
 		`);
 	}
@@ -156,11 +154,33 @@ const displayInitialRoverInformation = (rover) => {
 	}
 }
 
+const displayRoverDetails = (rover) => {
+	const loadingString = 'Loading...';
+	const imageLoadingSrc = '<br /><img src="assets/Mars_Loading.png" class="mars-load" style="width: 50px; position: absolute; left: 93%;" />';
+
+	if (rover.needsFetch) {
+		getRoverInformation(rover.name);
+	}
+
+	return (`<span><strong>${rover.name ? rover.name : loadingString}</strong></span>${rover.launch_date ? '' : imageLoadingSrc}<br /><br />
+			<span>Launch date: ${rover.launch_date ? rover.launch_date : loadingString}</span><br />
+			<span>Landing date: ${rover.landing_date ? rover.landing_date : loadingString}</span><br />
+			<span>Status: ${rover.status ? rover.status : loadingString}</span><br />
+			<span>Total number of photos: ${rover.total_photos ? rover.total_photos : loadingString}</span><br />
+			<span>Latest update: ${rover.max_date ? rover.max_date : loadingString}</span><br />`);
+};
+
 //TODO: pass in store
 const displayRoverPhotos = (rover) => {
 	const photos = getLatestPhotos(rover, store);
 	const rover_index = (rover.toLowerCase()) + '_photos';
-	if ((photos && store[rover_index]) && store[rover_index].current_index != undefined) return `<img src="${photos[store[rover_index].current_index].img_src}" width="10%" />`; 
+	if ((photos && store[rover_index]) && store[rover_index].current_index != undefined) {
+		return (`
+			<button onclick="store['${rover_index}'].current_index--; render(root, store); ">Backward</button>
+			<img src="${store[rover_index].photos[store[rover_index].current_index].img_src}" width="10%" />
+			<button onclick="store['${rover_index}'].current_index++; render(root, store); ">Forward</button>
+			`); 
+	}
 	else return ``;
 	
 }
@@ -176,6 +196,13 @@ function getLatestPhotos(rover, state) {
 	}
 	else
 		return [{img_src: ''}];
+}
+
+function createEmptyRoverObject(rover_name) {
+	return {
+		details: { name: rover_name, needsFetch: true },
+		photos: { photos: undefined, current_index: undefined }
+	}
 }
 
 // ------------------------------------------------------  API CALLS
@@ -207,7 +234,7 @@ function getRoverInformation(rover) {
 	});
 
 	//fetch data
-	fetch(`http://localhost:3000/rover_information/${rover.toLowerCase()}`)
+	fetch(`http://localhost:3000/${rover.toLowerCase()}/information`)
 		.then(data => data.json())
 		.then(data => updateStore(store, {
 			rover_details: {
@@ -244,7 +271,7 @@ function getRoverPhotos(rover, date) {
 		}
 	});
 
-	const data = fetch(`http://localhost:3000/rover_photos/${rover.toLowerCase()}/${date}`)
+	const data = fetch(`http://localhost:3000/${rover.toLowerCase()}/photos/${date}`)
 		.then(data => data.json())
 		.then(data => data.photos)
 		.then(data => {

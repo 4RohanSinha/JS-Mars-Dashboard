@@ -50,18 +50,18 @@ app.get('/apod', async (req, res) => {
     }
 })
 
-app.get('/rover_information/:rover', async (req, res) => {
+app.get('/:rover/information', async (req, res) => {
 	const roverInfo = await getRoverInformation(req.params.rover);
 	cnt++;
 	console.log(req.params.rover, ' hi ', cnt);
 	res.send(roverInfo);
 });
 
-app.get('/rover_photos/:rover/:date', async (req, res) => {
-	const roverInfo = await getRoverPhotoInformation(req.params.rover, req.params.date);
+app.get('/:rover/photos/:date', async (req, res) => {
+	const roverPhoto = await getRoverPhotoInformation(req.params.rover, req.params.date);
 	cnt++;
 	console.log('PHOTO DATE ', cnt);
-	res.send(roverInfo);
+	res.send(roverPhoto);
 });
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))
