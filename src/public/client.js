@@ -38,6 +38,9 @@ const App = (state) => {
 	    return `
 		<header></header>
 		<main>
+		    <section>
+	    	    	${displayNavBar(state)}
+		    </section>
 		    ${Greeting(state.user.name)}
 		    <section>
 			<h3>Put things on the page!</h3>
@@ -64,12 +67,17 @@ const App = (state) => {
 	    return (`
 	    	<header></header>
 		<main>
-			<h1>${store.current_display}</h1>
 			<section>
-				${displayRoverPhotos(state.rover_details[store.current_display].name)}
+	    	    	${displayNavBar(state)}
+			</section>
+			<h1><span class="title">${store.current_display}</span></h1>
+			<section>
+				<div class="rover-information">
+				${displayInitialRoverInformation(state.rover_details[store.current_display], false)}
+				</div>
 			</section>
 			<section>
-				${displayInitialRoverInformation(state.rover_details[store.current_display], false)}
+				${displayRoverPhotoAndNavigation(state.rover_details[store.current_display].name)}
 			</section>
 		</main>
 		<footer></footer>
@@ -125,6 +133,18 @@ const ImageOfTheDay = (apod) => {
     }
 }
 
+const displayNavBar = (state) => {
+	//TODO: make button responsible to entire area
+	return (`
+		<ul class="nav-bar">
+			<li class="nav-link"><button onclick="updateStore(store, { current_display: 'Main' });"><strong>MARS DASHBOARD</strong></button></li>
+			<li class="nav-link"><button onclick="updateStore(store, { current_display: 'Curiosity' });">Curiosity</button></li>
+			<li class="nav-link"><button onclick="updateStore(store, { current_display: 'Opportunity' });">Opportunity</button></li>
+			<li class="nav-link"><button onclick="updateStore(store, { current_display: 'Spirit' });">Spirit</button></li>
+		</ul>
+	`)
+};
+
 const displayInitialRoverInformation = (rover, show_image) => {
 	try {
 		const loadingString = 'Loading...';
@@ -171,19 +191,36 @@ const displayRoverDetails = (rover) => {
 };
 
 //TODO: pass in store
-const displayRoverPhotos = (rover) => {
+const displayRoverPhotoAndNavigation = (rover) => {
+		//include updateStore calls in onclick so that any future updates to state by button click are part of the return value
+	const rover_index = (rover.toLowerCase()) + '_photos';
+	return (`
+		<div class="controls">
+			<button onclick="updateStore(store, backwardPhoto(store, '${rover.toLowerCase()}'))">Previous</button>
+			<span>${store[rover_index].current_index+1} of ${store[rover_index].photos.length}</span>
+			<button onclick="updateStore(store, forwardPhoto(store, '${rover.toLowerCase()}'))">Next</button>
+		</div>
+		${displayRoverPhotos(rover, true)}
+	`);
+};
+
+const displayRoverPhotos = (rover, makeLarge) => {
 	const photos = getLatestPhotos(rover, store);
 	const rover_index = (rover.toLowerCase()) + '_photos';
 	if ((photos && store[rover_index]) && store[rover_index].current_index != undefined) {
+		if (makeLarge) {
 		return (`
-			<button onclick="store['${rover_index}'].current_index--; render(root, store); ">Backward</button>
+			<img src="${store[rover_index].photos[store[rover_index].current_index].img_src}" class="cur-gallery-photo" />
+			`); 
+		}
+
+		return (`
 			<img src="${store[rover_index].photos[store[rover_index].current_index].img_src}" width="10%" />
-			<button onclick="store['${rover_index}'].current_index++; render(root, store); ">Forward</button>
 			`); 
 	}
 	else return ``;
 	
-}
+};
 
 //TODO: pass in store
 function getLatestPhotos(rover, state) {
@@ -205,11 +242,41 @@ function createEmptyRoverObject(rover_name) {
 	}
 }
 
+function movePhoto(state, rover, change_params) {
+	const rover_index = rover.toLowerCase() + '_photos';
+	let change = change_params;
+	let final_index = 0;
+
+	if (state[rover_index].current_index+change < 0) {
+		final_index = state[rover_index].photos.length - 1;
+	} else if (state[rover_index].current_index+change >= state[rover_index].photos.length) {
+		final_index = 0;
+	} else {
+		final_index = state[rover_index].current_index+change;
+	}
+
+	return {
+		[rover_index]: {
+			...state[rover_index],
+			current_index: final_index
+		}
+	};
+}
+
+function forwardPhoto(state, rover) {
+	return movePhoto(state, rover, 1);
+}
+
+function backwardPhoto(state, rover) {
+	return movePhoto(state, rover, -1);
+}
+
 // ------------------------------------------------------  API CALLS
 // Example API call
 const getImageOfTheDay = (state) => {
     let { apod } = state
-    fetch(`http://localhost:3000/apod`)
+    //fetch(`http://localhost:3000/apod`)
+    fetch(`/apod`)
         .then(res => res.json())
         .then(apod => updateStore(store, { apod }))
 	.catch(err => console.log(err));
@@ -234,7 +301,8 @@ function getRoverInformation(rover) {
 	});
 
 	//fetch data
-	fetch(`http://localhost:3000/${rover.toLowerCase()}/information`)
+	//fetch(`http://localhost:3000/${rover.toLowerCase()}/information`)
+	fetch(`/${rover.toLowerCase()}/information`)
 		.then(data => data.json())
 		.then(data => updateStore(store, {
 			rover_details: {
@@ -271,7 +339,8 @@ function getRoverPhotos(rover, date) {
 		}
 	});
 
-	const data = fetch(`http://localhost:3000/${rover.toLowerCase()}/photos/${date}`)
+	//const data = fetch(`http://localhost:3000/${rover.toLowerCase()}/photos/${date}`)
+	const data = fetch(`/${rover.toLowerCase()}/photos/${date}`)
 		.then(data => data.json())
 		.then(data => data.photos)
 		.then(data => {
