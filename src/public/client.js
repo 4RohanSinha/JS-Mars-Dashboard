@@ -165,6 +165,7 @@ const displayInitialRoverInformation = (rover, show_image) => {
 		</div>
 		`);
 	}
+
 	catch(err) {
 
 		console.error(err);

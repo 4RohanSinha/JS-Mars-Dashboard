@@ -110,8 +110,9 @@ footer {
 
 .cur-gallery-photo {
 	position: absolute;
-	left: 35%;
-	top: 60%;
+	left: 50%;
+	transform: translate(-50%, 0);
+	top: 65%;
 	width: 32%;
 	z-index: 8;
 	margin: 1%;	
@@ -119,25 +120,29 @@ footer {
 
 .controls {
 	position: absolute;
-	left: 40%;
-	top: 50%;
+	left: 50%;
+	transform: translate(-50%, 0);
+	top: 55%;
 	z-index: 8;
 	margin: 1%;
 }
 
 .rover-information {
 	position: absolute;
-	left: 20%;
+	left: 50%;
+	transform: translate(-50%, 0);
 	top: 20%;
 	width: 50%;
 	z-index: 7;
 	padding: 3.5%;
+	clear: both;
 }
 
 .title {
 	position: absolute;
 	top: 15%;
-	left: 45%;
+	left: 50%;
+	transform: translate(-50%, 0);
 }
 
 /* -------------------  TABLET  --------------------- */
