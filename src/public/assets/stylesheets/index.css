@@ -78,7 +78,7 @@ footer {
 	top: 0;
 	left: 0;
 	width: 100%;
-	font-size: 10%;
+	height: 7.5%;
 	background-color: chocolate;
 	z-index: 10;
 }
@@ -88,7 +88,8 @@ footer {
 	display: block;
 	color: black;
 	text-align: center;
-	padding: 14px 16px;
+	width: 25%;
+	height: 100%;
 	background-color: chocolate;
 	z-index: 9;
 }
@@ -97,7 +98,9 @@ footer {
 	border: none;
 	background: none;
 	padding: 0;
-	font-size: 20px;
+	font-size: 138%;
+	width: 100%;
+	height: 100%;
 }
 
 .nav-link:hover {
@@ -106,43 +109,64 @@ footer {
 
 .nav-link:active {
 	background-color: #864313;
+	color: white;
+}
+
+.nav-link>button:active {
+	color: white;
+}
+
+.nav-selected {
+	background-color: #864313;
+}
+
+.nav-selected>button {
+	color: white;
 }
 
 .cur-gallery-photo {
 	position: absolute;
 	left: 50%;
 	transform: translate(-50%, 0);
-	top: 65%;
+	top: 80%;
 	width: 32%;
 	z-index: 8;
 	margin: 1%;	
+	padding-bottom: 5%;
 }
 
 .controls {
 	position: absolute;
 	left: 50%;
 	transform: translate(-50%, 0);
-	top: 55%;
+	top: 75%;
 	z-index: 8;
 	margin: 1%;
 }
 
 .rover-information {
 	position: absolute;
-	left: 50%;
+	left: 55%;
 	transform: translate(-50%, 0);
 	top: 20%;
 	width: 50%;
 	z-index: 7;
 	padding: 3.5%;
 	clear: both;
+	font-size: 19px;
 }
 
 .title {
 	position: absolute;
-	top: 15%;
+	top: 10%;
 	left: 50%;
 	transform: translate(-50%, 0);
+}
+
+.instructions {
+	position: absolute;
+	top: 18%;
+	left: 15%;
 }
 
 /* -------------------  TABLET  --------------------- */
